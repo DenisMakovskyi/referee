@@ -1,0 +1,23 @@
+[project]
+name = "referee"
+version = "0.1.0"
+description = "Crypto arbitrage monitoring service"
+authors = [{name="Unknown"}]
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.package-data]
+"" = ["config/*.yaml"]
+
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.dependencies]
+aiohttp = "*"
+websockets = "*"
+SQLAlchemy = "*"
+PyYAML = "*"
+
