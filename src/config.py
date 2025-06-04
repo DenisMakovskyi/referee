@@ -15,7 +15,7 @@ class Exchange:
 @dataclass
 class Settings:
     exchanges: Dict[str, Exchange]
-    monitor: Dict[str, List[str]]
+    stock: Dict[str, List[str]]
 
 
 def load_config(path: Path = CONFIG_PATH) -> Settings:
@@ -23,5 +23,4 @@ def load_config(path: Path = CONFIG_PATH) -> Settings:
         data = yaml.safe_load(f)
 
     exchanges = {e["name"]: Exchange(**e) for e in data.get("exchanges", [])}
-    monitor = data.get("monitor", {})
-    return Settings(exchanges=exchanges, monitor=monitor)
+    stock = data.get("stock", {})

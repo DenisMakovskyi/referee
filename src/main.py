@@ -18,9 +18,9 @@ async def main() -> None:
     config = load_config()
     db = Database()
     tasks = []
-    for token, exchanges in config.monitor.items():
-        for exch_name in exchanges:
-            exchange = config.exchanges[exch_name]
+for exch_name, tokens in config.stock.items():
+        exchange = config.exchanges[exch_name]
+        for token in tokens:
             cb = make_callback(db, token, exch_name)
             if exch_name == "binance":
                 tasks.append(binance.run(token, exchange, cb))
