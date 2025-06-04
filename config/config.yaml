@@ -6,4 +6,4 @@ exchanges:
 stock:
   binance:
     - btc
-    - etch
+    - etc

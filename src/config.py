@@ -24,4 +24,3 @@ def load_config(path: Path = CONFIG_PATH) -> Settings:
 
     exchanges = {e["name"]: Exchange(**e) for e in data.get("exchanges", [])}
     stock = data.get("stock", {})
-    return Settings(exchanges=exchanges, stock=stock)

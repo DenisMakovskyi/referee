@@ -18,7 +18,7 @@ async def main() -> None:
     config = load_config()
     db = Database()
     tasks = []
-    for exch_name, tokens in config.stock.items():
+for exch_name, tokens in config.stock.items():
         exchange = config.exchanges[exch_name]
         for token in tokens:
             cb = make_callback(db, token, exch_name)
