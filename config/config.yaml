@@ -1,0 +1,10 @@
+exchanges:
+  - name: binance
+    websocket_url: wss://stream.binance.com:9443/ws
+
+# Tokens to monitor with list of exchanges
+monitor:
+  btc:
+    - binance
+  eth:
+    - binance
