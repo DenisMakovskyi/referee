@@ -1,4 +1,4 @@
-from src.db import Database
+from src.database import Database
 
 
 def test_insert_price(tmp_path):

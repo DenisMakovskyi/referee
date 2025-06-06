@@ -1,7 +1,7 @@
-__pycache__/
-*.py[cod]
-*.egg-info/
-.env
-venv/
 .idea/
+venv/
+*.egg-info/
+__pycache__/
+.env
+*.py[cod]
 .DS_Store
