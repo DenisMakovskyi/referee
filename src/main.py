@@ -11,6 +11,8 @@ from src.stocks import bybit
 from src.stocks.bybit import ALIAS as ALIAS_BYBIT
 from src.stocks import binance
 from src.stocks.binance import ALIAS as ALIAS_BINANCE
+from src.stocks import coinbase
+from src.stocks.coinbase import ALIAS as ALIAS_COINBASE
 
 def _db_callback(db: Database, coin: str, stock: str) -> Callable[[float, int], None]:
     def _callback(price: float, timestamp: int) -> None:
@@ -33,6 +35,8 @@ async def main(shutdown_event: asyncio.Event) -> None:
                 promises.append(bybit.run(url=stock.websocket, coin=coin, callback=callback))
             elif stock.name == ALIAS_BINANCE:
                 promises.append(binance.run(url=stock.websocket, coin=coin, callback=callback))
+            elif stock.name == ALIAS_COINBASE:
+                promises.append(coinbase.run(url=stock.websocket, coin=coin, callback=callback))
             else:
                 raise ValueError(f"Unknown stock name: {stock.name}")
     if not promises:

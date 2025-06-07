@@ -36,6 +36,4 @@ async def _stream_prices(url: str, coin: str, callback: Callable[[float, int], N
                 callback(price, timestamp)
 
 def run(url: str, coin: str, callback: Callable[[float, int], None]) -> asyncio.Task:
-    return asyncio.create_task(
-        _stream_prices(url=url, coin=coin, callback=callback)
-    )
+    return asyncio.create_task(coro=_stream_prices(url=url, coin=coin, callback=callback))
