@@ -7,16 +7,16 @@ import asyncio
 import websockets
 
 from typing import Callable
-from config import Stock
+
+ALIAS = "binance"
 
 __BINANCE_KEY_PRICE = "c"
 __BINANCE_KEY_TIMESTAMP = "E"
 
-async def _stream_prices(coin: str, stock: Stock, callback: Callable[[float, int], None]) -> None:
-    url = stock.websocket
-    stream = f"{coin.lower()}usdt@ticker"
+async def _stream_prices(url:str, coin: str, callback: Callable[[float, int], None]) -> None:
+    ticker = f"{coin.lower()}usdt@ticker"
     certificate = ssl.create_default_context(cafile=certifi.where())
-    async with websockets.connect(uri=f"{url}/{stream}", ssl=certificate) as socket:
+    async with websockets.connect(uri=f"{url}/{ticker}", ssl=certificate) as socket:
         async for msg in socket:
             data = json.loads(msg)
             price = float(data.get(__BINANCE_KEY_PRICE))
@@ -24,5 +24,5 @@ async def _stream_prices(coin: str, stock: Stock, callback: Callable[[float, int
             callback(price, timestamp)
 
 
-def run(coin: str, stock: Stock, callback: Callable[[float, int], None]) -> asyncio.Task:
-    return asyncio.create_task(coro=_stream_prices(coin=coin, stock=stock, callback=callback))
+def run(url: str, coin: str, callback: Callable[[float, int], None]) -> asyncio.Task:
+    return asyncio.create_task(coro=_stream_prices(url=url, coin=coin, callback=callback))
