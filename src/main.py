@@ -16,6 +16,8 @@ from src.stocks.binance import ALIAS as ALIAS_BINANCE
 from src.stocks import coinbase
 from src.stocks.coinbase import ALIAS as ALIAS_COINBASE
 
+__COINBASE_CHUNK_SIZE = 25
+
 def _db_callback(db: Database, coin: str, stock: str) -> Callable[[float, int], None]:
     def _callback(price: float, timestamp: int) -> None:
         db.insert_price(
@@ -32,7 +34,6 @@ async def main(shutdown_event: asyncio.Event) -> None:
     promises: list[asyncio.Task] = []
 
     watchlist = [b.symbol for b in bubbles_watchlist() or []]
-    watchlist = watchlist[:5]
 
     for stock in config.stocks:
         callbacks: StreamCallbacks = {
@@ -43,7 +44,7 @@ async def main(shutdown_event: asyncio.Event) -> None:
         elif stock.name == ALIAS_BINANCE:
             promises.append(binance.run(url=stock.websocket, coins=watchlist, callbacks=callbacks))
         elif stock.name == ALIAS_COINBASE:
-            for chunk in chunked(watchlist, 25):
+            for chunk in chunked(iterable=watchlist, size=__COINBASE_CHUNK_SIZE):
                 promises.append(coinbase.run(url=stock.websocket, coins=chunk, callbacks={c: callbacks[c] for c in chunk}))
         else:
             raise ValueError(f"Unknown stock: {stock.name}")

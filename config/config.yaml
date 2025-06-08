@@ -5,7 +5,3 @@ stock:
     websocket: wss://stream.bybit.com/v5/public/spot
   - name: coinbase
     websocket: wss://ws-feed.exchange.coinbase.com
-
-coins:
-    - btc
-    - eth

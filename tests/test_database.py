@@ -40,7 +40,7 @@ def test_insert_price_upsert(db):
         assert result.price == pytest.approx(50000.0)
         assert result.timestamp == 1_600_000_000
 
-    # Другий виклик іншими даними — повинен оновити існуючий запис
+    # Другий виклик з іншими даними повинен оновити існуючий запис
     db.insert_price(coin_name="BTC", stock_name="binance", stock_price=51000.5, timestamp=1_600_000_100)
     with Session(db.engine) as sess:
         # Перевіряємо що запис один і він оновився

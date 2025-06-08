@@ -7,6 +7,3 @@ def test_load_config():
     assert binance is not None
     assert binance.name == "binance"
     assert binance.websocket == "wss://stream.binance.com:9443/ws"
-
-    assert "btc" in settings.observables
-    assert "eth" in settings.observables

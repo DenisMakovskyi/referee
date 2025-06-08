@@ -69,7 +69,7 @@ class Database:
                 session.refresh(coin)
             return coin
 
-    def add_stock(self, name: str, url: str | None = None) -> Stock:
+    def add_stock(self, name: str | None = None) -> Stock:
         with Session(self.engine) as session:
             stock = session.scalar(select(Stock).where(Stock.name == name))
             if stock is None:

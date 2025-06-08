@@ -19,7 +19,7 @@ __BINANCE_KEY_SYMBOL = "s"
 __BINANCE_KEY_COIN_PRICE = "c"
 __BINANCE_KEY_COIN_TIMESTAMP = "E"
 
-async def _stream_prices(url:str, coins: List[str], callbacks: StreamCallbacks) -> None:
+async def _stream_prices(url: str, coins: List[str], callbacks: StreamCallbacks) -> None:
     params = [f"{coin.lower()}usdt@ticker" for coin in coins]
     payload = {"id": 1, "method": "SUBSCRIBE", "params": params}
     certificate = ssl.create_default_context(cafile=certifi.where())
