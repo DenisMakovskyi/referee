@@ -7,6 +7,8 @@ from typing import Callable
 from config import load_config
 from database import Database
 
+from src.basics import StreamCallbacks, chunked
+from src.bubble import bubbles_watchlist
 from src.stocks import bybit
 from src.stocks.bybit import ALIAS as ALIAS_BYBIT
 from src.stocks import binance
@@ -28,17 +30,24 @@ async def main(shutdown_event: asyncio.Event) -> None:
     config = load_config()
     database = Database()
     promises: list[asyncio.Task] = []
+
+    watchlist = [b.symbol for b in bubbles_watchlist() or []]
+    watchlist = watchlist[:5]
+
     for stock in config.stocks:
-        for coin in config.observables:
-            callback = _db_callback(db=database, coin=coin, stock=stock.name)
-            if stock.name == ALIAS_BYBIT:
-                promises.append(bybit.run(url=stock.websocket, coin=coin, callback=callback))
-            elif stock.name == ALIAS_BINANCE:
-                promises.append(binance.run(url=stock.websocket, coin=coin, callback=callback))
-            elif stock.name == ALIAS_COINBASE:
-                promises.append(coinbase.run(url=stock.websocket, coin=coin, callback=callback))
-            else:
-                raise ValueError(f"Unknown stock name: {stock.name}")
+        callbacks: StreamCallbacks = {
+            coin: _db_callback(database, coin, stock.name) for coin in watchlist
+        }
+        if stock.name == ALIAS_BYBIT:
+            promises.append(bybit.run(url=stock.websocket, coins=watchlist, callbacks=callbacks))
+        elif stock.name == ALIAS_BINANCE:
+            promises.append(binance.run(url=stock.websocket, coins=watchlist, callbacks=callbacks))
+        elif stock.name == ALIAS_COINBASE:
+            for chunk in chunked(watchlist, 25):
+                promises.append(coinbase.run(url=stock.websocket, coins=chunk, callbacks={c: callbacks[c] for c in chunk}))
+        else:
+            raise ValueError(f"Unknown stock: {stock.name}")
+
     if not promises:
         database.close()
         return
