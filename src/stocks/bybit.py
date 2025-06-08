@@ -19,6 +19,9 @@ __BYBIT_KEY_TOPIC = "topic"
 __BYBIT_KEY_COIN_PRICE = "lastPrice"
 __BYBIT_KEY_COIN_TIMESTAMP = "ts"
 
+def run(url: str, coins: List[str], callbacks: StreamCallbacks) -> asyncio.Task:
+    return asyncio.create_task(coro=_stream_prices(url=url, coins=coins, callbacks=callbacks))
+
 async def _stream_prices(url: str, coins: List[str], callbacks: StreamCallbacks) -> None:
     params = [f"tickers.{coin.upper()}USDT" for coin in coins]
     payload = {"op": "subscribe", "args": params}
@@ -35,6 +38,3 @@ async def _stream_prices(url: str, coins: List[str], callbacks: StreamCallbacks)
                     price = float(data.get(__BYBIT_KEY_COIN_PRICE, 0))
                     timestamp = int(raw.get(__BYBIT_KEY_COIN_TIMESTAMP, int(time.time())))
                     callbacks[coin](price, timestamp)
-
-def run(url: str, coins: List[str], callbacks: StreamCallbacks) -> asyncio.Task:
-    return asyncio.create_task(coro=_stream_prices(url=url, coins=coins, callbacks=callbacks))

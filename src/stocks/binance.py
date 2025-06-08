@@ -19,6 +19,9 @@ __BINANCE_KEY_SYMBOL = "s"
 __BINANCE_KEY_COIN_PRICE = "c"
 __BINANCE_KEY_COIN_TIMESTAMP = "E"
 
+def run(url: str, coins: List[str], callbacks: StreamCallbacks) -> asyncio.Task:
+    return asyncio.create_task(coro=_stream_prices(url=url, coins=coins, callbacks=callbacks))
+
 async def _stream_prices(url: str, coins: List[str], callbacks: StreamCallbacks) -> None:
     params = [f"{coin.lower()}usdt@ticker" for coin in coins]
     payload = {"id": 1, "method": "SUBSCRIBE", "params": params}
@@ -34,6 +37,3 @@ async def _stream_prices(url: str, coins: List[str], callbacks: StreamCallbacks)
                     price = float(data.get(__BINANCE_KEY_COIN_PRICE))
                     timestamp = int(data.get(__BINANCE_KEY_COIN_TIMESTAMP))
                     callbacks[coin](price, timestamp)
-
-def run(url: str, coins: List[str], callbacks: StreamCallbacks) -> asyncio.Task:
-    return asyncio.create_task(coro=_stream_prices(url=url, coins=coins, callbacks=callbacks))

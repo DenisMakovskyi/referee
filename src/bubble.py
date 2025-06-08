@@ -8,6 +8,7 @@ from src.stocks.binance import ALIAS as ALIAS_BINANCE
 from src.stocks.coinbase import ALIAS as ALIAS_COINBASE
 
 __API_URL = "https://cryptobubbles.net/backend/data/bubbles1000.usd"
+__RESPONSE_TIMEOUT = 10
 
 __MARKET_CAP_MIN = 1_000_000
 __MARKET_CAP_MAX = 23_000_000_000
@@ -29,9 +30,14 @@ class Bubble:
     listed_exc: List[str]
     performance: Dict[str, float]
 
+def bubbles_watchlist() -> List[Bubble]:
+    raw = _fetch_bubbles()
+    bubbles = _parse_bubbles(raw)
+    return _filter_bubbles(bubbles)
+
 def _fetch_bubbles() -> List[Dict]:
     try:
-        response = requests.get(url=__API_URL, timeout=10)
+        response = requests.get(url=__API_URL, timeout=__RESPONSE_TIMEOUT)
         response.raise_for_status()
         return response.json()
     except (requests.RequestException, ValueError):
@@ -68,8 +74,3 @@ def _filter_bubbles(bubbles: List[Bubble]) -> List[Bubble]:
         filtered.append(b)
     filtered.sort(key=lambda x: x.market_cap, reverse=True)
     return filtered
-
-def bubbles_watchlist() -> List[Bubble]:
-    raw = _fetch_bubbles()
-    bubbles = _parse_bubbles(raw)
-    return _filter_bubbles(bubbles)
