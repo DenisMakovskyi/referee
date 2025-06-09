@@ -1,7 +1,13 @@
-stock:
+exchanges:
   - name: binance
     websocket: wss://stream.binance.com:9443/ws
   - name: bybit
     websocket: wss://stream.bybit.com/v5/public/spot
   - name: coinbase
     websocket: wss://ws-feed.exchange.coinbase.com
+
+bubbles_filter:
+  market_cap_min: 1000000
+  market_cap_max: 23000000000
+  listed_exchanges: 3
+  performance_per_day: 5.0

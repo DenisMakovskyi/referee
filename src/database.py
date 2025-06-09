@@ -11,15 +11,17 @@ from sqlalchemy import (
     Column,
     ForeignKey,
     UniqueConstraint,
+    text,
     create_engine,
     select,
 )
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, relationship, declarative_base
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
 _DB_PATH = Path(__file__).resolve().parents[1] / "data.db"
 _TABLE_NAME_COIN = "coins"
-_TABLE_NAME_STOCK = "stocks"
+_TABLE_NAME_EXCHANGE = "exchanges"
 _TABLE_NAME_PRICE_RECORD = "price_records"
 
 Base = declarative_base()
@@ -29,8 +31,8 @@ class Coin(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), unique=True, nullable=False)
 
-class Stock(Base):
-    __tablename__ = _TABLE_NAME_STOCK
+class Exchange(Base):
+    __tablename__ = _TABLE_NAME_EXCHANGE
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), unique=True, nullable=False)
 
@@ -38,15 +40,15 @@ class PriceRecord(Base):
     __tablename__ = _TABLE_NAME_PRICE_RECORD
     id = Column(Integer, primary_key=True, autoincrement=True)
     coin_id = Column(Integer, ForeignKey("coins.id"), nullable=False)
-    stock_id = Column(Integer, ForeignKey("stocks.id"), nullable=False)
+    exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False)
     price = Column(Float, nullable=False)
     timestamp = Column(Integer, nullable=False)
 
     coin = relationship("Coin")
-    stock = relationship("Stock")
+    exchange = relationship("Exchange")
 
     __table_args__ = (
-        UniqueConstraint("coin_id", "stock_id", name="uix_coin_stock"),
+        UniqueConstraint("coin_id", "exchange_id", name="uix_coin_exchange"),
     )
 
 class Database:
@@ -59,6 +61,18 @@ class Database:
     def close(self) -> None:
         self.engine.dispose()
 
+    def clear(self) -> None:
+        with self.engine.begin() as connection:
+            is_sqlite = self.engine.url.get_backend_name() == "sqlite"
+            for table in reversed(Base.metadata.sorted_tables):
+                connection.execute(text(f"DELETE FROM {table.name}"))
+                if is_sqlite:
+                    try:
+                        connection.execute(text(f"DELETE FROM sqlite_sequence WHERE name='{table.name}'"))
+                    except OperationalError as e:
+                        if "no such table: sqlite_sequence" not in str(e):
+                            raise
+
     def add_coin(self, name: str | None = None) -> Coin:
         with Session(self.engine) as session:
             coin = session.scalar(select(Coin).where(Coin.name == name))
@@ -69,21 +83,21 @@ class Database:
                 session.refresh(coin)
             return coin
 
-    def add_stock(self, name: str | None = None) -> Stock:
+    def add_exchange(self, name: str | None = None) -> Exchange:
         with Session(self.engine) as session:
-            stock = session.scalar(select(Stock).where(Stock.name == name))
-            if stock is None:
-                stock = Stock(name=name)
-                session.add(stock)
+            exchange = session.scalar(select(Exchange).where(Exchange.name == name))
+            if exchange is None:
+                exchange = Exchange(name=name)
+                session.add(exchange)
                 session.commit()
-                session.refresh(stock)
-            return stock
+                session.refresh(exchange)
+            return exchange
 
     def insert_price(
             self,
             coin_name: str,
-            stock_name: str,
-            stock_price: float,
+            exch_name: str,
+            exch_price: float,
             timestamp: int | None = None
     ) -> None:
         if timestamp is None:
@@ -94,18 +108,18 @@ class Database:
             if coin is None:
                 coin = self.add_coin(coin_name)
 
-            stock = session.scalar(select(Stock).where(Stock.name == stock_name))
-            if stock is None:
-                stock = self.add_stock(stock_name)
+            exchange = session.scalar(select(Exchange).where(Exchange.name == exch_name))
+            if exchange is None:
+                exchange = self.add_exchange(exch_name)
 
             statement = sqlite_insert(PriceRecord).values(
                 coin_id=coin.id,
-                stock_id=stock.id,
-                price=stock_price,
+                exchange_id=exchange.id,
+                price=exch_price,
                 timestamp=timestamp,
             )
             statement = statement.on_conflict_do_update(
-                index_elements=["coin_id", "stock_id"],
+                index_elements=["coin_id", "exchange_id"],
                 set_={
                     "price": statement.excluded.price,
                     "timestamp": statement.excluded.timestamp,

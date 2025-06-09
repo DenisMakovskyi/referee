@@ -9,9 +9,9 @@ from src.database import Database
 from src.manager import main_loop, MainManager
 
 async def main(shutdown_event: asyncio.Event) -> None:
-    config = load_config()
+    settings = load_config()
     database = Database()
-    main_manager = MainManager(db=database, stocks=config.stocks)
+    main_manager = MainManager(settings=settings, database=database)
     main_promise = asyncio.create_task(coro=main_loop(manager=main_manager))
 
     shutdown_task = asyncio.create_task(shutdown_event.wait())
