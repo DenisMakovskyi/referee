@@ -4,6 +4,7 @@ from typing import List, Dict
 from dataclasses import dataclass
 
 from src.config import BubblesFilter
+from src.exchanges.mexc.mexc import ALIAS as ALIAS_MEXC
 from src.exchanges.bybit import ALIAS as ALIAS_BYBIT
 from src.exchanges.binance import ALIAS as ALIAS_BINANCE
 from src.exchanges.coinbase import ALIAS as ALIAS_COINBASE
@@ -17,7 +18,7 @@ __KEY_PRICES_EXC = "exchangePrices"
 __KEY_PERFORMANCE = "performance"
 __KEY_PERFORMANCE_DAY = "day"
 
-__supported_exchanges = [ALIAS_BYBIT, ALIAS_BINANCE, ALIAS_COINBASE]
+__supported_exchanges = [ALIAS_MEXC, ALIAS_BYBIT, ALIAS_BINANCE, ALIAS_COINBASE]
 
 @dataclass
 class Bubble:

@@ -1,22 +1,36 @@
 [project]
 name = "referee"
+authors = [{ name = "Denys Makovskyi" }]
 version = "0.1.0"
 description = "Crypto arbitrage monitoring service"
-authors = [{name="Denys Makovskyi"}]
 requires-python = ">=3.10"
+
+[project.dependencies]
+typing_extensions = "~=4.14.0"
+
+PyYAML = ">=6.0.1"
+protobuf = "~=5.29.3"
+
+idna = "~=3.10"
+urllib3 = "~=2.4.0"
+charset-normalizer = "~=3.4.2"
+
+certifi = ">=2024.2.2"
+aiohttp = "*"
+requests = ">=2.31.0"
+websockets = "==12.0"
+
+SQLAlchemy = ">=2.0.30"
+
+[project.optional-dependencies]
+test = [
+    "pytest~=8.4.0",
+    "pytest-asyncio",
+]
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[project.dependencies]
-aiohttp = "*"
-websockets = "*"
-PyYAML = "*"
-SQLAlchemy = "*"
-
-[project.optional-dependencies]
-test = ["pytest"]
 
 [tool.setuptools.package-data]
 "" = ["config/*.yaml"]

@@ -28,8 +28,8 @@ async def _stream_prices(url: str, coins: List[str], callbacks: StreamCallbacks)
     certificate = ssl.create_default_context(cafile=certifi.where())
     async with websockets.connect(uri=url, ssl=certificate) as socket:
         await socket.send(json.dumps(payload))
-        async for msg in socket:
-            raw = json.loads(msg)
+        async for frame in socket:
+            raw = json.loads(frame)
             topic = raw.get(__BYBIT_KEY_TOPIC)
             if topic in params and __BYBIT_KEY_DATA in raw:
                 coin = topic.split('.')[1][:-4].lower()

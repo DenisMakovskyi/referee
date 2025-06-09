@@ -1,13 +1,15 @@
 exchanges:
-  - name: binance
-    websocket: wss://stream.binance.com:9443/ws
+  - name: mexc
+    websocket: wss://wbs-api.mexc.com/ws
   - name: bybit
     websocket: wss://stream.bybit.com/v5/public/spot
+  - name: binance
+    websocket: wss://stream.binance.com:9443/ws
   - name: coinbase
     websocket: wss://ws-feed.exchange.coinbase.com
 
 bubbles_filter:
   market_cap_min: 1000000
   market_cap_max: 23000000000
-  listed_exchanges: 3
+  listed_exchanges: 4
   performance_per_day: 5.0

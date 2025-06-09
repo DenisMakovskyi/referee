@@ -28,8 +28,8 @@ async def _stream_prices(url: str, coins: List[str], callbacks: StreamCallbacks)
     certificate = ssl.create_default_context(cafile=certifi.where())
     async with websockets.connect(uri=url, ssl=certificate) as socket:
         await socket.send(json.dumps(payload))
-        async for msg in socket:
-            data = json.loads(msg)
+        async for frame in socket:
+            data = json.loads(frame)
             if data.get(__BINANCE_KEY_TICKER) == __TICKER_24_H:
                 sym = data.get(__BINANCE_KEY_SYMBOL, "")
                 coin = sym[:-4].lower() if sym.endswith("USDT") else sym.lower()

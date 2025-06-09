@@ -34,8 +34,8 @@ async def _stream_prices(url: str, coins: List[str], callbacks: StreamCallbacks)
     certificate = ssl.create_default_context(cafile=certifi.where())
     async with websockets.connect(uri=url, ssl=certificate, origin=Origin(__COINBASE_ORIGIN)) as socket:
         await socket.send(json.dumps(payload))
-        async for msg in socket:
-            data = json.loads(msg)
+        async for frame in socket:
+            data = json.loads(frame)
             if data.get(__COINBASE_KEY_TYPE) == __TYPE_TICKER and data.get(__COINBASE_KEY_PRODUCT_ID) in params:
                 coin = data[__COINBASE_KEY_PRODUCT_ID].split('-')[0].lower()
                 if coin in callbacks:

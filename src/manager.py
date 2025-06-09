@@ -3,14 +3,18 @@ import asyncio
 from typing import List
 
 from config import Settings
+
 from src.basics import StreamCallbacks, chunked
 from src.bubble import Bubble, bubbles, bubbles_filter
 from src.database import Database
+
+from src.exchanges.mexc.mexc import ALIAS as ALIAS_MEXC, run as run_mexc
 from src.exchanges.bybit import ALIAS as ALIAS_BYBIT, run as run_bybit
 from src.exchanges.binance import ALIAS as ALIAS_BINANCE, run as run_binance
 from src.exchanges.coinbase import ALIAS as ALIAS_COINBASE, run as run_coinbase
 
-_COINBASE_CHUNK_SIZE = 25
+_CHUNK_SIZE_MEXC = 30
+_CHUNK_SIZE_COINBASE = 25
 
 class MainManager:
     def __init__(self, settings: Settings, database: Database):
@@ -48,14 +52,39 @@ class MainManager:
         for exchange in self.settings.exchanges:
             symbols = [b.symbol for b in bubbles_filter(bubbles=watchlist, exchange=exchange.name)]
             callbacks = self._build_callbacks(alias=exchange.name, coins=symbols)
-            if exchange.name == ALIAS_BYBIT:
-                self.asynchronous.append(run_bybit(url=exchange.websocket, coins=symbols, callbacks=callbacks))
-            elif exchange.name == ALIAS_BINANCE:
-                self.asynchronous.append(run_binance(url=exchange.websocket, coins=symbols, callbacks=callbacks))
-            elif exchange.name == ALIAS_COINBASE:
-                for chunk in chunked(iterable=symbols, size=_COINBASE_CHUNK_SIZE):
+            if exchange.name == ALIAS_MEXC:
+                for chunk in chunked(iterable=symbols, size=_CHUNK_SIZE_MEXC):
                     self.asynchronous.append(
-                        run_coinbase(url=exchange.websocket, coins=chunk, callbacks={c: callbacks[c] for c in chunk}),
+                        run_mexc(
+                            url=exchange.websocket,
+                            coins=symbols,
+                            callbacks={c: callbacks[c] for c in chunk},
+                        ),
+                    )
+            elif exchange.name == ALIAS_BYBIT:
+                self.asynchronous.append(
+                    run_bybit(
+                        url=exchange.websocket,
+                        coins=symbols,
+                        callbacks=callbacks,
+                    ),
+                )
+            elif exchange.name == ALIAS_BINANCE:
+                self.asynchronous.append(
+                    run_binance(
+                        url=exchange.websocket,
+                        coins=symbols,
+                        callbacks=callbacks,
+                    ),
+                )
+            elif exchange.name == ALIAS_COINBASE:
+                for chunk in chunked(iterable=symbols, size=_CHUNK_SIZE_COINBASE):
+                    self.asynchronous.append(
+                        run_coinbase(
+                            url=exchange.websocket,
+                            coins=chunk,
+                            callbacks={c: callbacks[c] for c in chunk},
+                        ),
                     )
             else:
                 raise ValueError(f"Unknown exchange: {exchange.name}")
