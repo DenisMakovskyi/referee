@@ -12,3 +12,9 @@ def chunked(iterable: Iterable[T], size: int) -> Iterator[List[T]]:
         if not chunk:
             break
         yield chunk
+
+def matches_number(f: List[T], s: List[T]) -> int:
+    return len(set(f) & set(s))
+
+def are_contents_the_same(f: List[T], s: List[T]) -> bool:
+    return set(f) == set(s)

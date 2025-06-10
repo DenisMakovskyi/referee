@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+
 import ssl
 import json
 import certifi
@@ -34,6 +36,6 @@ async def _stream_prices(url: str, coins: List[str], callbacks: StreamCallbacks)
                 sym = data.get(__BINANCE_KEY_SYMBOL, "")
                 coin = sym[:-4].lower() if sym.endswith("USDT") else sym.lower()
                 if coin in callbacks:
-                    price = float(data.get(__BINANCE_KEY_COIN_PRICE))
-                    timestamp = int(data.get(__BINANCE_KEY_COIN_TIMESTAMP))
+                    price = float(data.get(__BINANCE_KEY_COIN_PRICE, 0))
+                    timestamp = int(data.get(__BINANCE_KEY_COIN_TIMESTAMP, int(time.time())))
                     callbacks[coin](price, timestamp)

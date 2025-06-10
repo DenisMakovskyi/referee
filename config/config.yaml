@@ -11,5 +11,8 @@ exchanges:
 bubbles_filter:
   market_cap_min: 1000000
   market_cap_max: 23000000000
-  listed_exchanges: 4
-  performance_per_day: 5.0
+  listed_exchanges: 2
+  performance_per_day: 10.0
+  performance_per_hour_4: 5.0
+  performance_per_hour_1: 1.0
+  performance_per_minutes_15: 0.25

@@ -4,9 +4,11 @@ from typing import List
 
 from config import Settings
 
-from src.basics import StreamCallbacks, chunked
-from src.bubble import Bubble, bubbles, bubbles_filter
+from src.basics import StreamCallbacks, chunked, are_contents_the_same
 from src.database import Database
+
+from src.interests.bubble import Bubble
+from src.interests.bubbles import bubbles_fetch, bubbles_filter
 
 from src.exchanges.mexc.mexc import ALIAS as ALIAS_MEXC, run as run_mexc
 from src.exchanges.bybit import ALIAS as ALIAS_BYBIT, run as run_bybit
@@ -25,10 +27,12 @@ class MainManager:
 
     async def run(self) -> bool:
         def _symbols(bubbles: List[Bubble]) -> List[str]:
-            return [b.symbol for b in bubbles] or []
+            return [b.symbol for b in bubbles]
 
-        watchlist = bubbles(self.settings.filter) or []
-        if set(_symbols(watchlist)) == set(_symbols(self.watchlist)):
+        watchlist = await bubbles_fetch(self.settings.filter)
+        if not watchlist:
+            return False
+        if are_contents_the_same(_symbols(watchlist), _symbols(self.watchlist)):
             return False
 
         await self._start(watchlist)
@@ -51,6 +55,8 @@ class MainManager:
 
         for exchange in self.settings.exchanges:
             symbols = [b.symbol for b in bubbles_filter(bubbles=watchlist, exchange=exchange.name)]
+            if not symbols: continue
+
             callbacks = self._build_callbacks(alias=exchange.name, coins=symbols)
             if exchange.name == ALIAS_MEXC:
                 for chunk in chunked(iterable=symbols, size=_CHUNK_SIZE_MEXC):
@@ -96,7 +102,7 @@ class MainManager:
             ) for item in coins
         }
 
-async def main_loop(manager: MainManager, interval_seconds: int = 3660):
+async def main_loop(manager: MainManager, interval_seconds: int = 1800):
     while True:
         start = asyncio.get_event_loop().time()
         await manager.run()

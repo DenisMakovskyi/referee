@@ -26,6 +26,9 @@ class BubblesFilter:
     market_cap_max: float
     listed_exchanges: int
     performance_per_day: float
+    performance_per_hour_4: float
+    performance_per_hour_1: float
+    performance_per_minutes_15: float
 
 def load_config(path: Path = __CONFIG_PATH) -> Settings:
     with path.open(mode="r", encoding="utf-8") as stream:

@@ -57,7 +57,7 @@ async def _stream_prices(url: str, coins: List[str], callbacks: StreamCallbacks)
                                 if coin in callbacks and wrapper.publicAggreDeals.deals:
                                     deal = wrapper.publicAggreDeals.deals[-1]
                                     price = float(deal.price)
-                                    timestamp = int(wrapper.sendTime)
+                                    timestamp = int(deal.time)
                                     callbacks[coin](price, timestamp)
                 finally:
                     heartbeat.cancel()
