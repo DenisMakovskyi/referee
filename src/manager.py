@@ -15,10 +15,10 @@ from src.exchanges.bybit import ALIAS as ALIAS_BYBIT, run as run_bybit
 from src.exchanges.binance import ALIAS as ALIAS_BINANCE, run as run_binance
 from src.exchanges.coinbase import ALIAS as ALIAS_COINBASE, run as run_coinbase
 
-_CHUNK_SIZE_MEXC = 30
-_CHUNK_SIZE_COINBASE = 25
-
 class MainManager:
+    _CHUNK_SIZE_MEXC = 30
+    _CHUNK_SIZE_COINBASE = 25
+
     def __init__(self, settings: Settings, database: Database):
         self.settings = settings
         self.database = database
@@ -59,7 +59,7 @@ class MainManager:
 
             callbacks = self._build_callbacks(alias=exchange.name, coins=symbols)
             if exchange.name == ALIAS_MEXC:
-                for chunk in chunked(iterable=symbols, size=_CHUNK_SIZE_MEXC):
+                for chunk in chunked(iterable=symbols, size=self._CHUNK_SIZE_MEXC):
                     self.asynchronous.append(
                         run_mexc(
                             url=exchange.websocket,
@@ -84,7 +84,7 @@ class MainManager:
                     ),
                 )
             elif exchange.name == ALIAS_COINBASE:
-                for chunk in chunked(iterable=symbols, size=_CHUNK_SIZE_COINBASE):
+                for chunk in chunked(iterable=symbols, size=self._CHUNK_SIZE_COINBASE):
                     self.asynchronous.append(
                         run_coinbase(
                             url=exchange.websocket,

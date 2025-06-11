@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import time
-
 from pathlib import Path
 
 from sqlalchemy import (
@@ -18,6 +16,8 @@ from sqlalchemy import (
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, relationship, declarative_base
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+from src.basics import time_millis
 
 _DB_PATH = Path(__file__).resolve().parents[1] / "data.db"
 _TABLE_NAME_COIN = "coins"
@@ -101,7 +101,7 @@ class Database:
             timestamp: int | None = None
     ) -> None:
         if timestamp is None:
-            timestamp = int(time.time())
+            timestamp = time_millis()
 
         with Session(self.engine) as session:
             coin = session.scalar(select(Coin).where(Coin.name == coin_name))

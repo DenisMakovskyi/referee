@@ -1,65 +1,85 @@
 from __future__ import annotations
 
-import ssl
 import json
 import asyncio
-import certifi
-import websockets
 
-from typing import List
+from typing import Any, List, Dict, Optional
 
 from src.basics import StreamCallbacks
+from src.exchanges.base import BaseStreamer
 from src.exchanges.mexc.proto.PushDataV3ApiWrapper_pb2 import PushDataV3ApiWrapper
 
 ALIAS = "mexc"
 
-_CHANNEL = "spot@public.aggre.deals.v3.api.pb@"
-_PING_INTERVAL = 25  # треба пінгати MEXC кожні 25 секунд, щоб він не дропнув конекшин
-
-_CODE_OK = 0
-_MESSAGE_PONG = "pong"
-
-_MEXC_KEY_CODE = "code"
-_MEXC_KEY_MESSAGE = "msg"
-
 def run(url: str, coins: List[str], callbacks: StreamCallbacks) -> asyncio.Task:
-    return asyncio.create_task(coro=_stream_prices(url=url, coins=coins, callbacks=callbacks))
+    streamer = MexcStreamer(url=url, coins=coins, callbacks=callbacks)
+    return streamer.run()
 
-async def _stream_prices(url: str, coins: List[str], callbacks: StreamCallbacks) -> None:
-    channels = [
-        f"{_CHANNEL}100ms@{coin.upper()}USDT"
-        for coin in coins
-    ]
-    payload = {"method": "SUBSCRIPTION", "params": channels, "id": 1}
-    certificate = ssl.create_default_context(cafile=certifi.where())
+class MexcStreamer(BaseStreamer):
+    __CHANNEL = "spot@public.aggre.deals.v3.api.pb@"
+    __FRAME_INTERVAL = "100ms"
+    __HEARTBEAT_INTERVAL = 25
 
-    async def _heartbeat(websocket: websockets.WebSocketClientProtocol) -> None:
-        while True:
-            await asyncio.sleep(_PING_INTERVAL)
-            await websocket.send(json.dumps({"method": "PING"}))
+    __CODE_OK = 0
+    __MSG_PONG = "pong"
 
-    while True:
+    __KEY_CODE = "code"
+    __KEY_MESSAGE = "msg"
+
+    def __init__(
+        self,
+        url: str,
+        coins: List[str],
+        callbacks: StreamCallbacks,
+    ):
+        super().__init__(
+            url=url,
+            coins=coins,
+            callbacks=callbacks,
+            origin_header=None,
+        )
+        self._tickers: List[str] = [
+            f"{self.__CHANNEL}{self.__FRAME_INTERVAL}@{coin.upper()}USDT"
+            for coin in self.coins
+        ]
+
+    def _get_heartbeat_delay(self) -> Optional[int]:
+        return self.__HEARTBEAT_INTERVAL
+
+    def _get_heartbeat_message(self) -> Any:
+        return {"method": "PING"}
+
+    def _get_subscribe_payload(self) -> Dict[str, Any]:
+        return {"method": "SUBSCRIPTION", "params": self._tickers, "id": 1}
+
+    def _parse_websocket_frame(self, frame: str | bytes) -> Optional[tuple[str, float, int]]:
+        if isinstance(frame, str):
+            try:
+                data = json.loads(frame)
+            except json.JSONDecodeError:
+                return None
+            if self.__is_pong_frame(data):
+                return None
+            return None
+
+        wrapper = PushDataV3ApiWrapper()
         try:
-            async with websockets.connect(uri=url, ssl=certificate) as socket:
-                await socket.send(json.dumps(payload))
-                heartbeat = asyncio.create_task(_heartbeat(socket))
-                try:
-                    async for frame in socket:
-                        if isinstance(frame, str):
-                            data = json.loads(frame)
-                            if data.get(_MEXC_KEY_CODE) == _CODE_OK or data.get(_MEXC_KEY_MESSAGE) == _MESSAGE_PONG:
-                                continue
-                        else:
-                            wrapper = PushDataV3ApiWrapper()
-                            wrapper.ParseFromString(frame)
-                            if wrapper.channel.startswith(_CHANNEL):
-                                coin = wrapper.symbol[:-4].lower()
-                                if coin in callbacks and wrapper.publicAggreDeals.deals:
-                                    deal = wrapper.publicAggreDeals.deals[-1]
-                                    price = float(deal.price)
-                                    timestamp = int(deal.time)
-                                    callbacks[coin](price, timestamp)
-                finally:
-                    heartbeat.cancel()
+            wrapper.ParseFromString(frame)
         except Exception:
-            await asyncio.sleep(1)
+            return None
+
+        if not wrapper.channel.startswith(self.__CHANNEL):
+            return None
+
+        coin = wrapper.symbol[:-4].lower()
+        deals = wrapper.publicAggreDeals.deals
+        if not deals:
+            return None
+
+        deal = deals[-1]
+        price = float(deal.price)
+        timestamp = int(deal.time)
+        return coin, price, timestamp
+
+    def __is_pong_frame(self, data: Any) -> bool:
+        return data.get(self.__KEY_CODE) == self.__CODE_OK or data.get(self.__KEY_MESSAGE) == self.__MSG_PONG

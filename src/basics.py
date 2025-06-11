@@ -1,9 +1,14 @@
+import time
+
 from typing import TypeVar, List, Dict, Iterator, Iterable, Callable
 from itertools import islice
 
 T = TypeVar('T')
 
 StreamCallbacks = Dict[str, Callable[[float, int], None]]
+
+def time_millis() -> int:
+    return int(time.time() * 1000)
 
 def chunked(iterable: Iterable[T], size: int) -> Iterator[List[T]]:
     it = iter(iterable)

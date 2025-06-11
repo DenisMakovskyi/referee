@@ -1,41 +1,52 @@
 from __future__ import annotations
 
-import time
-
-import ssl
 import json
-import certifi
 import asyncio
-import websockets
 
-from typing import List
+from typing import Any, List, Dict, Optional
 
-from src.basics import StreamCallbacks
+from src.basics import StreamCallbacks, time_millis
+from src.exchanges.base import BaseStreamer
 
 ALIAS = "binance"
 
-__TICKER_24_H = "24hrTicker"
-
-__BINANCE_KEY_TICKER = "e"
-__BINANCE_KEY_SYMBOL = "s"
-__BINANCE_KEY_COIN_PRICE = "c"
-__BINANCE_KEY_COIN_TIMESTAMP = "E"
-
 def run(url: str, coins: List[str], callbacks: StreamCallbacks) -> asyncio.Task:
-    return asyncio.create_task(coro=_stream_prices(url=url, coins=coins, callbacks=callbacks))
+    streamer = BinanceStreamer(url=url, coins=coins, callbacks=callbacks)
+    return streamer.run()
 
-async def _stream_prices(url: str, coins: List[str], callbacks: StreamCallbacks) -> None:
-    params = [f"{coin.lower()}usdt@ticker" for coin in coins]
-    payload = {"id": 1, "method": "SUBSCRIBE", "params": params}
-    certificate = ssl.create_default_context(cafile=certifi.where())
-    async with websockets.connect(uri=url, ssl=certificate) as socket:
-        await socket.send(json.dumps(payload))
-        async for frame in socket:
+class BinanceStreamer(BaseStreamer):
+    __TICKER_24_H = "24hrTicker"
+
+    __KEY_TICKER = "e"
+    __KEY_SYMBOL = "s"
+    __KEY_COIN_PRICE = "c"
+    __KEY_COIN_TIMESTAMP = "E"
+
+    def _get_heartbeat_delay(self) -> Optional[int]:
+        return None
+
+    def _get_heartbeat_message(self) -> Any:
+        return None
+
+    def _get_subscribe_payload(self) -> Dict[str, Any]:
+        params = [f"{coin.lower()}usdt@ticker" for coin in self.coins]
+        return {
+            "id": 1,
+            "method": "SUBSCRIBE",
+            "params": params,
+        }
+
+    def _parse_websocket_frame(self, frame: str | bytes) -> Optional[tuple[str, float, int]]:
+        try:
             data = json.loads(frame)
-            if data.get(__BINANCE_KEY_TICKER) == __TICKER_24_H:
-                sym = data.get(__BINANCE_KEY_SYMBOL, "")
-                coin = sym[:-4].lower() if sym.endswith("USDT") else sym.lower()
-                if coin in callbacks:
-                    price = float(data.get(__BINANCE_KEY_COIN_PRICE, 0))
-                    timestamp = int(data.get(__BINANCE_KEY_COIN_TIMESTAMP, int(time.time())))
-                    callbacks[coin](price, timestamp)
+        except json.JSONDecodeError:
+            return None
+
+        if data.get(self.__KEY_TICKER) != self.__TICKER_24_H:
+            return None
+
+        sym = data.get(self.__KEY_SYMBOL, "")
+        coin = sym[:-4].lower() if sym.endswith("USDT") else sym.lower()
+        price = float(data.get(self.__KEY_COIN_PRICE, 0))
+        timestamp = int(data.get(self.__KEY_COIN_TIMESTAMP, time_millis()))
+        return coin, price, timestamp
